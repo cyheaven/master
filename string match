@@ -1,9 +1,11 @@
+// Sunday algorithm
 
 #include "stdafx.h"
 #define LONG  long
 #define ULONG  unsigned long
 #define UCHAR  char
 
+//ReferChar() decides whether to Convert letters to lowercase
 UCHAR ReferChar(const UCHAR achar, const ULONG NoCase)
 {
 	if (NoCase)
