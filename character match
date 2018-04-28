@@ -1,0 +1,78 @@
+#include "stdafx.h"
+#define LONG  long
+#define ULONG  unsigned long
+#define UCHAR  char
+
+//不区分大小写
+int  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pattern, ULONG PatternLen)
+{
+	const int maxSize = 256;
+	ULONG  *next = new ULONG[maxSize];
+	ULONG   i, j, pos;
+
+	for (i = 0; i < maxSize; i++)
+	{
+		next[i] = PatternLen + 1;
+	}
+	for (i = 0; i < PatternLen; i++)
+	{
+		//next[Pattern[i]] = PatternLen - i;
+		if (Pattern[i] >= 65 && Pattern[i] <= 90)
+		{
+			next[Pattern[i]] = PatternLen - i;
+			next[Pattern[i]+32] = PatternLen - i;
+		}
+		else if (Pattern[i] >= 97 && Pattern[i] <= 122)
+		{
+			next[Pattern[i]] = PatternLen - i;
+			next[Pattern[i]-32] = PatternLen - i;
+		}
+		else
+			next[Pattern[i]] = PatternLen - i;
+	}
+	pos = 0;
+	while (pos <= ContentLen - PatternLen)
+	{
+		i = pos;
+		for (j = 0; j < PatternLen; j++, i++)
+		{
+			//if (Content[i] != Pattern[j])
+			if (Content[i] != Pattern[j] &&
+				(!((Pattern[j]>=65 && Pattern[j]<=90) && (Content[i] == (Pattern[j]+32))))&&
+				( !((Pattern[j]>=97 && Pattern[j]<=122) && (Content[i] == (Pattern[j]-32))))
+				)
+			{
+				/// 当 pos < ContentLen - PatternLen 时向后移动指针并继续搜索，然而，
+				/// 当 pos == ContentLen - PatternLen 时不可继续搜索了，否则搜索位置将会移到数据区的尾部之外，与 Content[pos + PatternLen]，即 Content[ContentLen] 处的值相关
+
+				if (pos < ContentLen - PatternLen)
+				{
+					pos += next[Content[pos + PatternLen]];
+					break;
+				}
+				else
+				{
+					delete next;
+					return -1;
+				}
+			}
+		}
+		if (j == PatternLen)
+		{
+			delete next;
+			return pos;
+		}
+	}
+	delete next;
+	return -1;
+}
+int main()
+{
+	const UCHAR *p1 = "abcC";
+	const UCHAR *p2 = "bbabCcef";
+	LONG r = ZmmLookupContent(p2, 8, p1, 4);
+	printf("result is %d", r);
+	getchar();
+    return 0;
+}
+
