@@ -1,11 +1,20 @@
+
 #include "stdafx.h"
 #define LONG  long
 #define ULONG  unsigned long
 #define UCHAR  char
 
-//不区分大小写
-int  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pattern, ULONG PatternLen)
+UCHAR ReferChar(const UCHAR achar, const ULONG NoCase)
 {
+	if (NoCase)
+		return (achar >= 'A' && achar <= 'Z') ? (achar + 32) : achar;
+	else
+		return achar;
+}
+
+LONG  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pattern, ULONG PatternLen, ULONG NoCase)
+{
+
 	const int maxSize = 256;
 	ULONG  *next = new ULONG[maxSize];
 	ULONG   i, j, pos;
@@ -16,19 +25,7 @@ int  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pat
 	}
 	for (i = 0; i < PatternLen; i++)
 	{
-		//next[Pattern[i]] = PatternLen - i;
-		if (Pattern[i] >= 65 && Pattern[i] <= 90)
-		{
-			next[Pattern[i]] = PatternLen - i;
-			next[Pattern[i]+32] = PatternLen - i;
-		}
-		else if (Pattern[i] >= 97 && Pattern[i] <= 122)
-		{
-			next[Pattern[i]] = PatternLen - i;
-			next[Pattern[i]-32] = PatternLen - i;
-		}
-		else
-			next[Pattern[i]] = PatternLen - i;
+		next[ReferChar(Pattern[i], NoCase)] = PatternLen - i;
 	}
 	pos = 0;
 	while (pos <= ContentLen - PatternLen)
@@ -36,18 +33,14 @@ int  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pat
 		i = pos;
 		for (j = 0; j < PatternLen; j++, i++)
 		{
-			//if (Content[i] != Pattern[j])
-			if (Content[i] != Pattern[j] &&
-				(!((Pattern[j]>=65 && Pattern[j]<=90) && (Content[i] == (Pattern[j]+32))))&&
-				( !((Pattern[j]>=97 && Pattern[j]<=122) && (Content[i] == (Pattern[j]-32))))
-				)
+			if (ReferChar(Content[i], NoCase) != ReferChar(Pattern[j], NoCase))
 			{
 				/// 当 pos < ContentLen - PatternLen 时向后移动指针并继续搜索，然而，
 				/// 当 pos == ContentLen - PatternLen 时不可继续搜索了，否则搜索位置将会移到数据区的尾部之外，与 Content[pos + PatternLen]，即 Content[ContentLen] 处的值相关
 
 				if (pos < ContentLen - PatternLen)
 				{
-					pos += next[Content[pos + PatternLen]];
+					pos += next[ReferChar(Content[pos + PatternLen], NoCase)];
 					break;
 				}
 				else
@@ -68,11 +61,10 @@ int  ZmmLookupContent(const UCHAR * Content, ULONG ContentLen, const UCHAR * Pat
 }
 int main()
 {
-	const UCHAR *p1 = "abcC";
-	const UCHAR *p2 = "bbabCcef";
-	LONG r = ZmmLookupContent(p2, 8, p1, 4);
+	const UCHAR *p1 = "abCc";
+	const UCHAR *p2 = "bbabccef";
+	LONG r = ZmmLookupContent(p2, 8, p1, 4,1);
 	printf("result is %d", r);
 	getchar();
     return 0;
 }
-
